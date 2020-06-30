@@ -1,0 +1,26 @@
+{
+  "name": "employee-tracker",
+  "version": "1.0.0",
+  "description": "An application that can be used to view and manage the departments, role, and employees in a company, so that the user can organize and plan their business.",
+  "main": "server.js",
+  "dependencies": {
+    "init": "^0.1.2",
+    "inquirer": "^7.2.0",
+    "mysql2": "^2.1.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Creyes17e/employee-tracker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Creyes17e/employee-tracker/issues"
+  },
+  "homepage": "https://github.com/Creyes17e/employee-tracker#readme"
+}
