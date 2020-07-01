@@ -74,6 +74,7 @@ function runApp() {
       }
     });
 }
+
 //Displays all employees
 function viewAllEmployees() {
   var query = "SELECT * FROM employee";
@@ -88,6 +89,7 @@ function viewAllEmployees() {
     runApp();
   });
 }
+
 //Displays all departments
 function viewAllDepartments() {
   var query = "SELECT * FROM department";
@@ -100,6 +102,7 @@ function viewAllDepartments() {
     runApp();
   });
 }
+
 //Displays all job roles
 function viewAllRoles() {
   var query = "SELECT * FROM job_role";
@@ -114,6 +117,7 @@ function viewAllRoles() {
     runApp();
   });
 }
+
 //Adds employee
 function addEmployee() {
   connection.query("SELECT * FROM job_role", function (err, res) {
@@ -181,8 +185,10 @@ function addEmployee() {
       });
   });
 }
+
 //Adds job role
 function addRole() {}
+
 //Adds department
 function addDepartment() {
   inquirer
@@ -208,7 +214,9 @@ function addDepartment() {
       viewAllDepartments();
     });
 }
+
 //Removes an employee
 function removeEmployee() {}
+
 //Updates employee's job role
 function updateEmployeeRole() {}
