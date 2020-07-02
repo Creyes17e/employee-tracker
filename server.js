@@ -2,6 +2,7 @@ var mysql = require("mysql2");
 var inquirer = require("inquirer");
 const { inherits } = require("util");
 const { forEach } = require("mysql2/lib/constants/charset_encodings");
+const consoleTable = require("console.table");
 
 var connection = mysql.createConnection({
   host: "localhost",
@@ -80,12 +81,8 @@ function viewAllEmployees() {
   var query = "SELECT * FROM employee";
   connection.query(query, function (err, res) {
     if (err) throw err;
-    console.log("----Employees----");
-    res.forEach(function (employee) {
-      console.log(
-        `ID:${employee.id} | Name: ${employee.first_name} ${employee.last_name} | Role ID: ${employee.role_id} | Manager ID: ${employee.manager_id}`
-      );
-    });
+    console.log("----------Employees----------");
+    console.table(res);
     runApp();
   });
 }
@@ -95,10 +92,8 @@ function viewAllDepartments() {
   var query = "SELECT * FROM department";
   connection.query(query, function (err, res) {
     if (err) throw err;
-    console.log("----Departments----");
-    res.forEach(function (department) {
-      console.log(`ID:${department.id} | Name: ${department.department_name} `);
-    });
+    console.log("----------Departments----------");
+    console.table(res);
     runApp();
   });
 }
@@ -108,12 +103,8 @@ function viewAllRoles() {
   var query = "SELECT * FROM job_role";
   connection.query(query, function (err, res) {
     if (err) throw err;
-    console.log("----Roles----");
-    res.forEach(function (job_role) {
-      console.log(
-        `ID:${job_role.id} | Title: ${job_role.title} | Salary:${job_role.salary} | Department ID: ${job_role.department_id} `
-      );
-    });
+    console.log("----------Roles----------");
+    console.table(res);
     runApp();
   });
 }
@@ -186,9 +177,6 @@ function addEmployee() {
   });
 }
 
-//Adds job role
-function addRole() {}
-
 //Adds department
 function addDepartment() {
   inquirer
@@ -204,7 +192,7 @@ function addDepartment() {
       },
     })
     .then(function (answer) {
-      var query = "INSERT INTO department (department_name) VALUES ( ? )";
+      var query = "INSERT INTO department (department_name) VALUES (?)";
       connection.query(query, answer.department, function (err) {
         if (err) throw err;
         console.log(
@@ -215,8 +203,120 @@ function addDepartment() {
     });
 }
 
-//Removes an employee
-function removeEmployee() {}
+//Adds new job role
+function addRole() {
+  var query = "SELECT * FROM department";
+  connection.query(query, function (err, res) {
+    if (err) throw err;
+    inquirer
+      .prompt([
+        {
+          name: "roleTitle",
+          type: "input",
+          message: "What is the title of the new role?",
+          validate: function (input) {
+            if (input === "") {
+              return "Invalid input, try again";
+            }
+            return true;
+          },
+        },
+        {
+          name: "roleSalary",
+          type: "input",
+          message: "What is the salary of the new role?",
+          validate: function (input) {
+            if (input === "") {
+              return "Invalid input, try again";
+            }
+            return true;
+          },
+        },
+        {
+          name: "departmentChoice",
+          type: "list",
+          message: "Which department is the new role under?",
+          choices: function () {
+            var choiceArray = [];
+            for (var i = 0; i < res.length; i++) {
+              choiceArray.push(res[i].department_name);
+            }
+            return choiceArray;
+          },
+        },
+      ])
+      .then(function (answer) {
+        var query2 = "SELECT * FROM department";
+        var chosenDept = answer.departmentChoice;
+        connection.query(query2, chosenDept, function (err, res) {
+          if (err) throw err;
+          let filterDepartment = res.filter(function (res) {
+            return res.department_name == chosenDept;
+          });
+          let id = filterDepartment[0].id;
+
+          var query3 = "INSERT INTO job_role SET ?";
+
+          connection.query(query3, {
+            title: answer.roleTitle,
+            salary: parseInt(answer.roleSalary),
+            department_id: id,
+          });
+          console.log(
+            `You have successfully added role: ${answer.roleTitle.toUpperCase()}.`
+          );
+        });
+        viewAllRoles();
+      });
+  });
+}
 
 //Updates employee's job role
-function updateEmployeeRole() {}
+function updateEmployeeRole() {
+  var query = "SELECT * FROM job_role";
+  connection.query(query, function (err, res) {
+    connection;
+  });
+}
+
+//Removes an employee
+//TODO REMOVE EMPLOYEE FUNCTIONALITY
+function removeEmployee() {
+  var query = "SELECT * FROM employee";
+  connection.query(query, function (err, res) {
+    if (err) throw err;
+    inquirer
+      .prompt([
+        {
+          name: "removeEmp",
+          type: "list",
+          message: "Which employee would you like to remove?",
+          choices: function () {
+            var choiceArray = [];
+            for (var i = 0; i < res.length; i++) {
+              var firstName = `${res[i].first_name} `;
+              var lastName = `${res[i].last_name} `;
+              var combined = firstName.concat(lastName);
+
+              choiceArray.push(combined);
+            }
+            return choiceArray;
+          },
+        },
+      ])
+      .then(function (answer) {
+        connection.query(
+          "DELETE FROM employee WHERE ?",
+          {
+            id: answer.removeEmp,
+          },
+          function (err, res) {
+            if (err) throw err;
+          }
+        );
+        viewAllEmployees();
+      });
+
+    console.log("success");
+  });
+}
