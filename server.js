@@ -10,6 +10,7 @@ var connection = mysql.createConnection({
   user: "root",
   password: "password",
   database: "employee_trackerdb",
+  // multipleStatements: true,
 });
 
 connection.connect(function (err) {
@@ -31,6 +32,7 @@ function runApp() {
         "Remove Employee",
         "Update Employee Role",
         "Add Role",
+        "Remove Role",
         "Add Department",
         "Exit",
       ],
@@ -63,6 +65,10 @@ function runApp() {
 
         case "Add Role":
           addRole();
+          break;
+
+        case "Remove Role":
+          removeRole();
           break;
 
         case "Add Department":
@@ -239,7 +245,10 @@ function addRole() {
           choices: function () {
             var choiceArray = [];
             for (var i = 0; i < res.length; i++) {
-              choiceArray.push(res[i].department_name);
+              choiceArray.push({
+                name: res[i].department_name,
+                value: res[i].id,
+              });
             }
             return choiceArray;
           },
@@ -247,21 +256,16 @@ function addRole() {
       ])
       .then(function (answer) {
         var query2 = "SELECT * FROM department";
-        var chosenDept = answer.departmentChoice;
-        connection.query(query2, chosenDept, function (err, res) {
+        connection.query(query2, answer.departmentChoice, function (err, res) {
           if (err) throw err;
-          let filterDepartment = res.filter(function (res) {
-            return res.department_name == chosenDept;
-          });
-          let id = filterDepartment[0].id;
 
           var query3 = "INSERT INTO job_role SET ?";
-
-          connection.query(query3, {
+          var values = {
             title: answer.roleTitle,
             salary: parseInt(answer.roleSalary),
-            department_id: id,
-          });
+            department_id: answer.departmentChoice,
+          };
+          connection.query(query3, values);
           console.log(
             `You have successfully added role: ${answer.roleTitle.toUpperCase()}.`
           );
@@ -273,16 +277,112 @@ function addRole() {
 
 //Updates employee's job role
 function updateEmployeeRole() {
+  var query = "SELECT first_name, last_name, role_id, id FROM employee";
+  var query2 = "SELECT title, id FROM job_role";
+  connection.query(query, function (err, res) {
+    connection.query(query2, function (err2, res2) {
+      if (err) throw err;
+
+      inquirer
+        .prompt([
+          {
+            name: "empName",
+            type: "list",
+            message: "Which employee's role would you like to update?",
+            choices: function () {
+              var choiceArray = [];
+              for (var i = 0; i < res.length; i++) {
+                choiceArray.push({
+                  name: res[i].first_name + " " + res[i].last_name,
+                  value: res[i].id,
+                });
+              }
+              return choiceArray;
+            },
+          },
+          {
+            name: "listOfRoles",
+            type: "list",
+            message: "Select a new role for the employee",
+            choices: function () {
+              var choiceArray = [];
+              for (var i = 0; i < res2.length; i++) {
+                choiceArray.push({
+                  name: res2[i].title + "--" + " Role ID: " + res2[i].id,
+                });
+              }
+              return choiceArray;
+            },
+          },
+          {
+            name: "updatedRole",
+            type: "input",
+            message: "What is the new role's id?",
+            validate: function (input) {
+              if (input === "") {
+                return "Invalid input, try again";
+              }
+              return true;
+            },
+          },
+        ])
+        .then(function (answer) {
+          var query3 = `UPDATE employee SET role_id = ? WHERE id = ?`;
+          var values = [answer.updatedRole, answer.empName];
+          connection.query(query3, values, function (err, res) {
+            if (err) throw err;
+            console.log(
+              `You have successfully updated the employee's job role to ${answer.listOfRoles}`
+            );
+          });
+          viewAllEmployees();
+        });
+    });
+  });
+}
+
+//Removes Roles that were created
+function removeRole() {
   var query = "SELECT * FROM job_role";
   connection.query(query, function (err, res) {
-    connection;
+    if (err) throw err;
+
+    inquirer
+      .prompt([
+        {
+          name: "removeRole",
+          type: "list",
+          message: "Which role would you like to remove?",
+          choices: function () {
+            var choiceArray = [];
+            for (var i = 0; i < res.length; i++) {
+              choiceArray.push(res[i].title);
+            }
+            return choiceArray;
+          },
+        },
+      ])
+      .then(function (answer) {
+        var query2 = "DELETE FROM  job_role WHERE ?";
+        connection.query(query2, { title: answer.removeRole }, function (
+          err,
+          res
+        ) {
+          if (err) throw err;
+          console.log(
+            `You have successfully removed the role:${answer.removeRole}`
+          );
+          viewAllRoles();
+        });
+      });
   });
 }
 
 //Removes an employee
 //TODO REMOVE EMPLOYEE FUNCTIONALITY
 function removeEmployee() {
-  var query = "SELECT * FROM employee";
+  var query =
+    'SELECT CONCAT_WS (" ",first_name,last_name) AS full_name FROM employee';
   connection.query(query, function (err, res) {
     if (err) throw err;
     inquirer
@@ -294,11 +394,7 @@ function removeEmployee() {
           choices: function () {
             var choiceArray = [];
             for (var i = 0; i < res.length; i++) {
-              var firstName = `${res[i].first_name} `;
-              var lastName = `${res[i].last_name} `;
-              var combined = firstName.concat(lastName);
-
-              choiceArray.push(combined);
+              choiceArray.push(res[i].full_name);
             }
             return choiceArray;
           },
@@ -306,9 +402,9 @@ function removeEmployee() {
       ])
       .then(function (answer) {
         connection.query(
-          "DELETE FROM employee WHERE ?",
+          'SELECT CONCAT_WS (" ",first_name,last_name) AS full_name FROM employee; DELETE FROM employee WHERE full_name=?',
           {
-            id: answer.removeEmp,
+            full_name: answer.removeEmp,
           },
           function (err, res) {
             if (err) throw err;
