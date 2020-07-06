@@ -3,6 +3,8 @@ var inquirer = require("inquirer");
 const { inherits } = require("util");
 const { forEach } = require("mysql2/lib/constants/charset_encodings");
 const consoleTable = require("console.table");
+const logo = require("asciiart-logo");
+const config = require("./package.json");
 
 var connection = mysql.createConnection({
   host: "localhost",
@@ -15,6 +17,7 @@ var connection = mysql.createConnection({
 
 connection.connect(function (err) {
   if (err) throw err;
+  console.log(logo(config).render());
   runApp();
 });
 
@@ -85,9 +88,10 @@ function runApp() {
 //Displays all employees
 function viewAllEmployees() {
   var query = "SELECT * FROM employee";
+
   connection.query(query, function (err, res) {
     if (err) throw err;
-    console.log("----------Employees----------");
+    console.log("------------------Employees------------------");
     console.table(res);
     runApp();
   });
@@ -96,9 +100,10 @@ function viewAllEmployees() {
 //Displays all departments
 function viewAllDepartments() {
   var query = "SELECT * FROM department";
+
   connection.query(query, function (err, res) {
     if (err) throw err;
-    console.log("----------Departments----------");
+    console.log("------------------Departments------------------");
     console.table(res);
     runApp();
   });
@@ -107,9 +112,10 @@ function viewAllDepartments() {
 //Displays all job roles
 function viewAllRoles() {
   var query = "SELECT * FROM job_role";
+
   connection.query(query, function (err, res) {
     if (err) throw err;
-    console.log("----------Roles----------");
+    console.log("--------------------Roles--------------------");
     console.table(res);
     runApp();
   });
@@ -117,7 +123,9 @@ function viewAllRoles() {
 
 //Adds employee
 function addEmployee() {
-  connection.query("SELECT * FROM job_role", function (err, res) {
+  var query = "SELECT * FROM job_role";
+
+  connection.query(query, function (err, res) {
     if (err) throw err;
 
     inquirer
@@ -174,6 +182,7 @@ function addEmployee() {
           last_name: answer.last_name,
           role_id: answer.role_id,
         };
+
         connection.query(query, values, function (err) {
           if (err) throw err;
           console.log("The employee has been succesfully added!");
@@ -199,6 +208,7 @@ function addDepartment() {
     })
     .then(function (answer) {
       var query = "INSERT INTO department (department_name) VALUES (?)";
+
       connection.query(query, answer.department, function (err) {
         if (err) throw err;
         console.log(
@@ -212,6 +222,7 @@ function addDepartment() {
 //Adds new job role
 function addRole() {
   var query = "SELECT * FROM department";
+
   connection.query(query, function (err, res) {
     if (err) throw err;
     inquirer
@@ -256,6 +267,7 @@ function addRole() {
       ])
       .then(function (answer) {
         var query2 = "SELECT * FROM department";
+
         connection.query(query2, answer.departmentChoice, function (err, res) {
           if (err) throw err;
 
@@ -279,6 +291,7 @@ function addRole() {
 function updateEmployeeRole() {
   var query = "SELECT first_name, last_name, role_id, id FROM employee";
   var query2 = "SELECT title, id FROM job_role";
+
   connection.query(query, function (err, res) {
     connection.query(query2, function (err2, res2) {
       if (err) throw err;
@@ -329,6 +342,7 @@ function updateEmployeeRole() {
         .then(function (answer) {
           var query3 = `UPDATE employee SET role_id = ? WHERE id = ?`;
           var values = [answer.updatedRole, answer.empName];
+
           connection.query(query3, values, function (err, res) {
             if (err) throw err;
             console.log(
@@ -344,6 +358,7 @@ function updateEmployeeRole() {
 //Removes Roles that were created
 function removeRole() {
   var query = "SELECT * FROM job_role";
+
   connection.query(query, function (err, res) {
     if (err) throw err;
 
@@ -383,6 +398,7 @@ function removeRole() {
 function removeEmployee() {
   var query =
     'SELECT CONCAT_WS (" ",first_name,last_name) AS full_name FROM employee';
+
   connection.query(query, function (err, res) {
     if (err) throw err;
     inquirer
@@ -394,17 +410,18 @@ function removeEmployee() {
           choices: function () {
             var choiceArray = [];
             for (var i = 0; i < res.length; i++) {
-              choiceArray.push(res[i].full_name);
+              choiceArray.push({ name: res[i].full_name, value: res[i].id });
             }
             return choiceArray;
           },
         },
       ])
       .then(function (answer) {
+        var query2 = "DELETE FROM employee WHERE id=?";
         connection.query(
-          'SELECT CONCAT_WS (" ",first_name,last_name) AS full_name FROM employee; DELETE FROM employee WHERE full_name=?',
+          query2,
           {
-            full_name: answer.removeEmp,
+            id: answer.removeEmp,
           },
           function (err, res) {
             if (err) throw err;
