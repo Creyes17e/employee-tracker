@@ -10,7 +10,7 @@ An application that can be used to view and manage the departments, role, and em
 
 ## GIF
 
-![employee-tracker-gif](./assets/employee-tracker)
+![employee-tracker-gif](employee-tracker.gif)
 
 ## Table of Contents
 
