@@ -1,7 +1,5 @@
 var mysql = require("mysql2");
 var inquirer = require("inquirer");
-const { inherits } = require("util");
-const { forEach } = require("mysql2/lib/constants/charset_encodings");
 const consoleTable = require("console.table");
 const logo = require("asciiart-logo");
 const config = require("./package.json");
@@ -37,6 +35,7 @@ function runApp() {
         "Add Role",
         "Remove Role",
         "Add Department",
+        "Remove Department",
         "Exit",
       ],
     })
@@ -76,6 +75,10 @@ function runApp() {
 
         case "Add Department":
           addDepartment();
+          break;
+
+        case "Remove Department":
+          removeDept();
           break;
 
         case "Exit":
@@ -186,8 +189,8 @@ function addEmployee() {
         connection.query(query, values, function (err) {
           if (err) throw err;
           console.log("The employee has been succesfully added!");
-          runApp();
         });
+        viewAllEmployees();
       });
   });
 }
@@ -214,8 +217,8 @@ function addDepartment() {
         console.log(
           `You have successfully added department: ${answer.department.toUpperCase()}.`
         );
+        viewAllDepartments();
       });
-      viewAllDepartments();
     });
 }
 
@@ -281,8 +284,8 @@ function addRole() {
           console.log(
             `You have successfully added role: ${answer.roleTitle.toUpperCase()}.`
           );
+          viewAllRoles();
         });
-        viewAllRoles();
       });
   });
 }
@@ -348,8 +351,8 @@ function updateEmployeeRole() {
             console.log(
               `You have successfully updated the employee's job role to ${answer.listOfRoles}`
             );
+            viewAllEmployees();
           });
-          viewAllEmployees();
         });
     });
   });
@@ -385,7 +388,7 @@ function removeRole() {
         ) {
           if (err) throw err;
           console.log(
-            `You have successfully removed the role:${answer.removeRole}`
+            `You have successfully removed the role: ${answer.removeRole}`
           );
           viewAllRoles();
         });
@@ -393,14 +396,50 @@ function removeRole() {
   });
 }
 
-//Removes an employee
-//TODO REMOVE EMPLOYEE FUNCTIONALITY
-function removeEmployee() {
-  var query =
-    'SELECT CONCAT_WS (" ",first_name,last_name) AS full_name FROM employee';
+//Removes Departments that were created
+function removeDept() {
+  var query = "SELECT * FROM department";
 
   connection.query(query, function (err, res) {
     if (err) throw err;
+
+    inquirer
+      .prompt([
+        {
+          name: "removeDept",
+          type: "list",
+          message: "Which department would you like to remove?",
+          choices: function () {
+            var choiceArray = [];
+            for (var i = 0; i < res.length; i++) {
+              choiceArray.push(res[i].department_name);
+            }
+            return choiceArray;
+          },
+        },
+      ])
+      .then(function (answer) {
+        var query2 = "DELETE FROM  department WHERE ?";
+        connection.query(
+          query2,
+          { department_name: answer.removeDept },
+          function (err, res) {
+            if (err) throw err;
+            console.log(
+              `You have successfully removed Department: ${answer.removeDept}`
+            );
+            viewAllDepartments();
+          }
+        );
+      });
+  });
+}
+//Removes an employee that was created
+function removeEmployee() {
+  var query = "SELECT * FROM employee";
+  connection.query(query, function (err, res) {
+    if (err) throw err;
+
     inquirer
       .prompt([
         {
@@ -410,26 +449,32 @@ function removeEmployee() {
           choices: function () {
             var choiceArray = [];
             for (var i = 0; i < res.length; i++) {
-              choiceArray.push({ name: res[i].full_name, value: res[i].id });
+              choiceArray.push({
+                name: res[i].first_name + " " + res[i].last_name,
+                value: res[i].id,
+              });
             }
             return choiceArray;
           },
         },
       ])
       .then(function (answer) {
-        var query2 = "DELETE FROM employee WHERE id=?";
+        var query3 = "DELETE FROM employee WHERE ?";
+
         connection.query(
-          query2,
+          query3,
           {
             id: answer.removeEmp,
           },
           function (err, res) {
             if (err) throw err;
+
+            console.log(
+              `You have successfully removed employee id: ${answer.removeEmp}`
+            );
+            viewAllEmployees();
           }
         );
-        viewAllEmployees();
       });
-
-    console.log("success");
   });
 }
