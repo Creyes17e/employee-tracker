@@ -8,6 +8,10 @@ https://github.com/Creyes17e/employee-tracker.git
 
 An application that can be used to view and manage the departments, role, and employees in a company, so that the user can organize and plan their business.
 
+## GIF
+
+![employee-tracker-gif](./assets/employee-tracker)
+
 ## Table of Contents
 
 - [Installation](#Installation)
